@@ -34,13 +34,15 @@ example, in addition to the `users.js` above, one might want to create another
 function that combines the two as follows:
 
 ``` javascript
+var users = require('./users');
+
 exports.getUserFromUsername = function (username, done) {
-  exports.getUserIdFromUsername(username, function (error, id) {
+  users.getUserIdFromUsername(username, function (error, id) {
     if (error) {
       return done(error);
     }
 
-    exports.getUserFromUserId(id, done);
+    users.getUserFromUserId(id, done);
   });
 };
 ```
