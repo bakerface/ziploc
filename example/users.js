@@ -24,43 +24,23 @@
 var redis = require('fakeredis');
 var client = redis.createClient();
 
-function UsernameTakenError(username) {
+function TakenError($, value) {
   Error.call(this);
   Error.captureStackTrace(this, this.constructor);
 
-  this.name = 'UsernameTakenError';
-  this.message = 'The specified username has been taken';
-  this.username = username;
+  this.name = $ + 'TakenError';
+  this.message = 'The ' + $.space().toLowerCase() +
+    ' "' + value + '" has been taken';
   this.code = 409;
 }
 
-function UsernameNotFoundError(username) {
+function NotFoundError($, value) {
   Error.call(this);
   Error.captureStackTrace(this, this.constructor);
 
-  this.name = 'UsernameNotFoundError';
-  this.message = 'The specified username is not registered';
-  this.username = username;
-  this.code = 404;
-}
-
-function EmailTakenError(email) {
-  Error.call(this);
-  Error.captureStackTrace(this, this.constructor);
-
-  this.name = 'EmailTakenError';
-  this.message = 'The specified email has been taken';
-  this.email = email;
-  this.code = 409;
-}
-
-function EmailNotFoundError(email) {
-  Error.call(this);
-  Error.captureStackTrace(this, this.constructor);
-
-  this.name = 'EmailNotFoundError';
-  this.message = 'The specified email is not registered';
-  this.email = email;
+  this.name = $ + 'NotFoundError';
+  this.message = 'The ' + $.space().toLowerCase() +
+    ' "' + value + '" was not found';
   this.code = 404;
 }
 
@@ -74,72 +54,55 @@ function random(base, len) {
   return s.slice(0, len);
 }
 
-exports.getNullableUserIdFromUsername = function (username, done) {
+exports.getNullableUserIdForUsernameFromUsername = function (username, done) {
+  console.log('searching username:', username);
   client.hget('usernames', username, done);
 };
 
+exports.getNullableUserIdForEmailFromEmail = function (email, done) {
+  console.log('searching email:', email);
+  client.hget('emails', email, done);
+};
+
+exports.getUserIdFromUserIdForUsername = function (id, done) {
+  done(null, id);
+};
+
+exports.getUserIdFromUserIdForEmail = function (id, done) {
+  done(null, id);
+};
+
 exports.getNullableUserFromUserId = function (id, done) {
-  client.hgetall('user:' + id, done);
+  console.log('searching user id:', id);
+  return client.hgetall('user:' + id, done);
 };
 
-exports.getUserFromAvailableUsername = function (username, done) {
-  done(new UsernameNotFoundError(username));
-};
-
-exports.getIsAvailableUsernameFromUsernameAndNullableUserId =
-  function (username, id, done) {
+exports.getIsAvailable$From$AndNullableUserIdFor$ =
+  function ($, value, id, done) {
     if (id) {
-      return done(new UsernameTakenError(username));
+      return done(new TakenError($, value));
     }
 
     done();
   };
 
-exports.getAvailableUsernameFromUsernameAndIsAvailableUsername =
-  function (username, available, done) {
-    done(null, username);
+exports.getAvailable$From$AndIsAvailable$ =
+  function ($, value, available, done) {
+    done(null, value);
   };
 
-exports.getIsRegisteredUsernameFromUsernameAndNullableUserId =
-  function (username, id, done) {
+exports.getIsRegistered$FromNullableUserIdFor$And$ =
+  function ($, id, value, done) {
     if (id) {
       return done();
     }
 
-    done(new UsernameNotFoundError(username));
+    done(new NotFoundError($, value));
   };
 
-exports.getIsAvailableEmailFromEmailAndNullableUserId =
-  function (email, id, done) {
-    if (id) {
-      return done(new EmailTakenError(email));
-    }
-
-    done();
-  };
-
-exports.getAvailableEmailFromEmailAndIsAvailableEmail =
-  function (email, available, done) {
-    done(null, email);
-  };
-
-exports.getIsRegisteredEmailFromEmailAndNullableUserId =
-  function (email, id, done) {
-    if (id) {
-      return done();
-    }
-
-    done(new EmailNotFoundError(email));
-  };
-
-exports.getRegisteredEmailFromEmailAndIsRegisteredEmail =
-  function (email, registered, done) {
-    done(null, email);
-  };
-
-exports.getRegisteredEmailFromEmailAndIsRegisteredEmail =
-  function (email, registered, done) {
-    done(null, email);
+exports.getRegistered$From$AndIsRegistered$ =
+  function ($, value, registered, done) {
+    done(null, value);
   };
 
 exports.getRegisteredUserFromAvailableUsernameAndAvailableEmail =
@@ -151,6 +114,8 @@ exports.getRegisteredUserFromAvailableUsernameAndAvailableEmail =
       username: username,
       email: email
     };
+
+    console.log('creating user:', user);
 
     client.multi()
       .hmset('user:' + id, user)

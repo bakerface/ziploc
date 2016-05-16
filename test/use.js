@@ -100,11 +100,24 @@ describe('ziploc.use(instance)', function () {
 
   describe('when the instance has a templated route', function () {
     beforeEach(function () {
-      instance.Foo = 'foo';
-      instance.Bar = 'bar';
+      instance.getLowerCase$ = function ($, done) {
+        done(null, $.toLowerCase());
+      };
+
+      instance.getUpperCase$ = function ($, done) {
+        done(null, $.toUpperCase());
+      };
+
+      instance.getCamelCase$ = function ($, done) {
+        done(null, $.toCamelCase());
+      };
+
+      instance.getSpaced$ = function ($, done) {
+        done(null, $.space());
+      };
 
       instance.get$ = function ($, done) {
-        done(null, this[$]);
+        done(null, $);
       };
 
       instance.getFooBarFromFooAndBar = function (foo, bar, done) {
@@ -115,7 +128,39 @@ describe('ziploc.use(instance)', function () {
     it('should pass the template to the function', function (done) {
       ziploc.use(instance).resolve('FooBar', function (error, foobar) {
         assert.strictEqual(error, null);
+        assert.strictEqual(foobar, 'FooBar');
+        done();
+      });
+    });
+
+    it('should be able to lowercase', function (done) {
+      ziploc.use(instance).resolve('LowerCaseFooBar', function (error, foobar) {
+        assert.strictEqual(error, null);
         assert.strictEqual(foobar, 'foobar');
+        done();
+      });
+    });
+
+    it('should be able to uppercase', function (done) {
+      ziploc.use(instance).resolve('UpperCaseFooBar', function (error, foobar) {
+        assert.strictEqual(error, null);
+        assert.strictEqual(foobar, 'FOOBAR');
+        done();
+      });
+    });
+
+    it('should be able to camelcase', function (done) {
+      ziploc.use(instance).resolve('CamelCaseFooBar', function (error, foobar) {
+        assert.strictEqual(error, null);
+        assert.strictEqual(foobar, 'fooBar');
+        done();
+      });
+    });
+
+    it('should be able to space', function (done) {
+      ziploc.use(instance).resolve('SpacedFooBar', function (error, foobar) {
+        assert.strictEqual(error, null);
+        assert.strictEqual(foobar, 'Foo Bar');
         done();
       });
     });

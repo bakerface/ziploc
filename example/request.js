@@ -21,18 +21,33 @@
  *
  */
 
-function get(object, key) {
-  if (object) {
-    return object[key];
-  }
+function UndefinedError($) {
+  Error.call(this);
+  Error.captureStackTrace(this, this.constructor);
+
+  this.name = $ + 'UndefinedError';
+  this.message = 'Expected ' + $.space().toLowerCase() + ' to be defined';
+  this.code = 400;
 }
 
 exports.getNullable$FromRequest = function ($, request, done) {
-  var name = $[0].toLowerCase() + $.slice(1);
+  var name = $.toCamelCase();
 
-  done(null,
-    get(request.params, name) ||
-    get(request.query, name) ||
-    get(request.body, name) ||
-    get(request.headers, name));
+  if (name in request.params) {
+    return done(null, request.params[name]);
+  }
+
+  if (name in request.query) {
+    return done(null, request.query[name]);
+  }
+
+  if (name in request.body) {
+    return done(null, request.body[name]);
+  }
+
+  if (name in request.headers) {
+    return done(null, request.headers[name]);
+  }
+
+  done(new UndefinedError($));
 };
