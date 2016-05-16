@@ -21,10 +21,26 @@
  *
  */
 
+function expand($) {
+  return $[0].toLowerCase() +
+    $.slice(1).replace(/[A-Z]/g, function (c) {
+      return ' ' + c.toLowerCase();
+    });
+}
+
+function UndefinedError($) {
+  Error.call(this);
+  Error.captureStackTrace(this, this.constructor);
+
+  this.name = $ + 'UndefinedError';
+  this.message = 'Expected ' + expand($) + ' to be defined';
+  this.code = 400;
+}
+
 exports.get$FromNullable$ = function ($, value, done) {
   if (value) {
     return done(null, value);
   }
 
-  done(new ReferenceError($));
+  done(new UndefinedError($));
 };
