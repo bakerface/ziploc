@@ -1,6 +1,6 @@
 {
   "name": "ziploc",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "An extensible nano-service framework",
   "main": "index.js",
   "author": "Christopher M. Baker",
@@ -32,11 +32,21 @@
       "it",
       "beforeEach",
       "afterEach"
-    ]
+    ],
+    "rules": {
+      "no-unused-vars": [
+        "error",
+        {
+          "argsIgnorePattern": "^_" 
+        }
+      ]
+    }
   },
   "devDependencies": {
+    "body-parser": "^1.15.1",
     "codeclimate-test-reporter": "^0.3.1",
     "express": "^4.13.4",
+    "fakeredis": "^1.0.3",
     "istanbul": "^0.4.3",
     "mocha": "^2.4.5",
     "supertest": "^1.2.0",

@@ -120,20 +120,32 @@ function series(tasks, done) {
   next();
 }
 
-function first(tasks, error, done) {
-  function next(error, value) {
+function first(tasks, done) {
+  var firstError;
+
+  function _done(error, value) {
     if (!error) {
       return done(null, value);
     }
 
-    if (tasks.length > 0) {
-      return tasks.shift()(next);
+    if (!firstError) {
+      firstError = error;
     }
 
-    done(error);
+    next();
   }
 
-  next(error);
+  function next() {
+    var task = tasks.shift();
+
+    if (task) {
+      return task(_done);
+    }
+
+    done(firstError);
+  }
+
+  next();
 }
 
 function canResolveExplicit(type) {
@@ -162,7 +174,7 @@ function resolveExplicit(contents, content, done) {
   var tasks = content.dependencies
     .map(createTypeResolver(contents));
 
-  return series(tasks, function (error, args) {
+  series(tasks, function (error, args) {
     if (error) {
       return done(error);
     }
@@ -226,7 +238,7 @@ function resolveImplicit(contents, type, content, done) {
     .map(rename(template))
     .map(createTypeResolver(contents));
 
-  return series(tasks, function (error, args) {
+  series(tasks, function (error, args) {
     if (error) {
       return done(error);
     }
@@ -253,7 +265,13 @@ function resolveType(contents, type, done) {
   var implicit = sort(contents.filter(canResolveImplicit(type)))
     .map(createImplicitResolver(contents, type));
 
-  return first(explicit.concat(implicit), new TypeError(type), done);
+  var tasks = explicit.concat(implicit);
+
+  if (tasks.length === 0) {
+    return done(new TypeError(type));
+  }
+
+  first(tasks, done);
 }
 
 Ziploc.prototype.resolve = function (type, done) {

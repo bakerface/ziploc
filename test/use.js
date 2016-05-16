@@ -181,6 +181,29 @@ describe('ziploc.use(instance)', function () {
     });
   });
 
+  describe('when the instance has multiple routes that fail', function () {
+    beforeEach(function () {
+      instance.getBar = function (done) {
+        done(null, 'bar');
+      };
+
+      instance.getFoo = function (done) {
+        done(new ReferenceError('getFoo'));
+      };
+
+      instance.getFooFromBar = function (bar, done) {
+        done(new ReferenceError('getFooFromBar'));
+      };
+    });
+
+    it('should return the first error when resolving', function (done) {
+      ziploc.use(instance).resolve('Foo', function (error) {
+        assert.deepEqual(error, new ReferenceError('getFoo'));
+        done();
+      });
+    });
+  });
+
   describe('when the instance has a recursive template', function () {
     beforeEach(function () {
       instance.getFoo = function (done) {
