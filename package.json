@@ -34,10 +34,13 @@
       "afterEach"
     ],
     "rules": {
+      "xo/filename-case": [
+        "off"
+      ],
       "no-unused-vars": [
         "error",
         {
-          "argsIgnorePattern": "^_" 
+          "argsIgnorePattern": "^_"
         }
       ]
     }
@@ -49,6 +52,7 @@
     "fakeredis": "^1.0.3",
     "istanbul": "^0.4.3",
     "mocha": "^2.4.5",
+    "require-all": "^2.0.0",
     "supertest": "^1.2.0",
     "xo": "^0.15.1"
   }

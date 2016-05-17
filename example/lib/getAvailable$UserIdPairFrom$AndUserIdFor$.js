@@ -21,38 +21,26 @@
  *
  */
 
-var express = require('express');
-var bodyParser = require('body-parser');
-var ziploc = require('..').use(require('./lib'));
-var app = express();
+function TakenError($, value) {
+  var spaced = $.space().toLowerCase();
 
-app.use(bodyParser.json());
+  Error.call(this);
+  Error.captureStackTrace(this, this.constructor);
 
-app.use(bodyParser.urlencoded({
-  extended: false
-}));
+  this.name = $ + 'TakenError';
+  this.message = 'The ' + spaced + ' "' + value + '" has already been taken';
+  this.code = 409;
+}
 
-app.get('/v1/users/:username',
-  ziploc.express().status(200).json('User'));
+module.exports = function ($, value, id, done) {
+  if (id) {
+    return done(new TakenError($, value));
+  }
 
-app.get('/v1/users/:username/available',
-  ziploc.express().status(200).json('IsAvailableUsername'));
+  var record = {
+    id: id
+  };
 
-app.get('/v1/users/:username/registered',
-  ziploc.express().status(200).json('IsRegisteredUsername'));
-
-app.post('/v1/users/:username/register',
-  ziploc.express().status(200).json('RegisteredUser'));
-
-app.use(function (err, req, res, _next) {
-  var code = (err.code | 0) || 500;
-  var name = err.name || 'Error';
-  var message = err.message || 'An unexpected error has occurred';
-
-  res.status(code).json({
-    name: name,
-    message: message
-  });
-});
-
-app.listen(process.env.PORT || 3000);
+  record[$.toCamelCase()] = value;
+  done(null, record);
+};

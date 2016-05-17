@@ -21,38 +21,33 @@
  *
  */
 
-var express = require('express');
-var bodyParser = require('body-parser');
-var ziploc = require('..').use(require('./lib'));
-var app = express();
+function UndefinedError($) {
+  Error.call(this);
+  Error.captureStackTrace(this, this.constructor);
 
-app.use(bodyParser.json());
+  this.name = $ + 'UndefinedError';
+  this.message = 'Expected ' + $.space().toLowerCase() + ' to be defined';
+  this.code = 400;
+}
 
-app.use(bodyParser.urlencoded({
-  extended: false
-}));
+module.exports = function ($, request, done) {
+  var name = $.toCamelCase();
 
-app.get('/v1/users/:username',
-  ziploc.express().status(200).json('User'));
+  if (name in request.params) {
+    return done(null, request.params[name]);
+  }
 
-app.get('/v1/users/:username/available',
-  ziploc.express().status(200).json('IsAvailableUsername'));
+  if (name in request.query) {
+    return done(null, request.query[name]);
+  }
 
-app.get('/v1/users/:username/registered',
-  ziploc.express().status(200).json('IsRegisteredUsername'));
+  if (name in request.body) {
+    return done(null, request.body[name]);
+  }
 
-app.post('/v1/users/:username/register',
-  ziploc.express().status(200).json('RegisteredUser'));
+  if (name in request.headers) {
+    return done(null, request.headers[name]);
+  }
 
-app.use(function (err, req, res, _next) {
-  var code = (err.code | 0) || 500;
-  var name = err.name || 'Error';
-  var message = err.message || 'An unexpected error has occurred';
-
-  res.status(code).json({
-    name: name,
-    message: message
-  });
-});
-
-app.listen(process.env.PORT || 3000);
+  done(new UndefinedError($));
+};

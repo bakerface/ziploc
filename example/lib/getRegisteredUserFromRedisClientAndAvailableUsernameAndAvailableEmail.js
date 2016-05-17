@@ -21,38 +21,22 @@
  *
  */
 
-var express = require('express');
-var bodyParser = require('body-parser');
-var ziploc = require('..').use(require('./lib'));
-var app = express();
+var random = require('./random');
 
-app.use(bodyParser.json());
+module.exports = function (client, username, email, done) {
+  var id = random(36, 25);
 
-app.use(bodyParser.urlencoded({
-  extended: false
-}));
+  var user = {
+    id: id,
+    username: username,
+    email: email
+  };
 
-app.get('/v1/users/:username',
-  ziploc.express().status(200).json('User'));
-
-app.get('/v1/users/:username/available',
-  ziploc.express().status(200).json('IsAvailableUsername'));
-
-app.get('/v1/users/:username/registered',
-  ziploc.express().status(200).json('IsRegisteredUsername'));
-
-app.post('/v1/users/:username/register',
-  ziploc.express().status(200).json('RegisteredUser'));
-
-app.use(function (err, req, res, _next) {
-  var code = (err.code | 0) || 500;
-  var name = err.name || 'Error';
-  var message = err.message || 'An unexpected error has occurred';
-
-  res.status(code).json({
-    name: name,
-    message: message
-  });
-});
-
-app.listen(process.env.PORT || 3000);
+  client.multi()
+    .hmset('user:' + id, user)
+    .hset('usernames', username, id)
+    .hset('emails', email, id)
+    .exec(function (error) {
+      done(error, user);
+    });
+};
