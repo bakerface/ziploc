@@ -11,9 +11,50 @@
 The purpose of this package is to provide a framework for aggregating simple,
 independent services into a complete system. Let's take an example:
 
-Lets assume we have a redis database containing a collection of users. Lets also
-assume that users are indexed by a unique `id` property, as well as a unique
-`username` property. A simple `users.js` might be the following:
+``` javascript
+var ziploc = require('ziploc');
+
+var instance = {
+  getUserIdFromUsername: function (username) {
+    return username + '1234';
+  },
+
+  getEmailAddressFromUserId: function (id, done) {
+    done(null, id + '@example.com');
+  },
+
+  getEmailFromEmailAddressAndUsername: function (address, username) {
+    var email = {
+      to: address,
+      subject: 'Hello ' + username,
+      text: 'Glad to meet you!'
+    };
+
+    return sendEmail(email)
+      .then(function () {
+        return email;
+      });
+  }
+};
+
+ziploc
+  .use(instance)
+  .given('Username', 'john')
+  .resolve('Email', function (error, email) {
+    console.log(email); // =>
+    // {
+    //   to: "john1234@example.com",
+    //   subject: "Hello john",
+    //   text: "Glad to meet you!"
+    // }
+  });
+```
+
+To understand why and how this works, we should compare this approach to a more
+traditional approach. Lets assume we have a redis database containing a
+collection of users. Lets also assume that users are indexed by a unique `id`
+property, as well as a unique `username` property. A simple `users.js` might be
+the following:
 
 ``` javascript
 var redis = require('redis');
