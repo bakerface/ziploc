@@ -67,12 +67,12 @@ Here is a basic example:
 var ziploc = require('ziploc');
 
 var instance = {
-  getUserIdFromUsername: function (username, done) {
-    done(null, username + '1234');
+  getUserIdFromUsername: function (username) {
+    return username + '1234';
   },
 
-  getEmailFromUserId: function (id, done) {
-    done(null, id + '@example.com');
+  getEmailFromUserId: function (id) {
+    return id + '@example.com';
   }
 };
 
@@ -94,12 +94,12 @@ eliminate duplicate code. Let's look at another example:
 var ziploc = require('ziploc');
 
 var instance = {
-  get$FromNullable$: function ($, value, done) {
+  get$FromNullable$: function ($, value) {
     if (value) {
-      return done(null, value);
+      return value;
     }
 
-    done(new ReferenceError($));
+    throw new ReferenceError($);
   }
 };
 
