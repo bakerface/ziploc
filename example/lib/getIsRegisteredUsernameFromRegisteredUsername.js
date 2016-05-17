@@ -21,6 +21,4 @@
  *
  */
 
-module.exports = function (username, done) {
-  done();
-};
+module.exports = function () { };

@@ -21,6 +21,6 @@
  *
  */
 
-module.exports = function ($, pair, done) {
-  done(null, pair[$.toCamelCase()]);
+module.exports = function ($, pair) {
+  return pair[$.toCamelCase()];
 };

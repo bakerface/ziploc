@@ -21,33 +21,26 @@
  *
  */
 
-function UndefinedError($) {
-  Error.call(this);
-  Error.captureStackTrace(this, this.constructor);
+var UndefinedError = require('./UndefinedError');
 
-  this.name = $ + 'UndefinedError';
-  this.message = 'Expected ' + $.space().toLowerCase() + ' to be defined';
-  this.code = 400;
-}
-
-module.exports = function ($, request, done) {
+module.exports = function ($, request) {
   var name = $.toCamelCase();
 
   if (name in request.params) {
-    return done(null, request.params[name]);
+    return request.params[name];
   }
 
   if (name in request.query) {
-    return done(null, request.query[name]);
+    return request.query[name];
   }
 
   if (name in request.body) {
-    return done(null, request.body[name]);
+    return request.body[name];
   }
 
   if (name in request.headers) {
-    return done(null, request.headers[name]);
+    return request.headers[name];
   }
 
-  done(new UndefinedError($));
+  throw new UndefinedError($);
 };

@@ -21,9 +21,13 @@
  *
  */
 
-var redis = require('fakeredis');
-var client = redis.createClient();
+module.exports = function ($, value) {
+  var spaced = $.space().toLowerCase();
 
-module.exports = function () {
-  return client;
+  Error.call(this);
+  Error.captureStackTrace(this, this.constructor);
+
+  this.name = $ + 'NotFoundError';
+  this.message = 'The ' + spaced + ' "' + value + '" was not found';
+  this.code = 404;
 };

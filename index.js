@@ -148,6 +148,37 @@ function first(tasks, done) {
   next();
 }
 
+function invoke(fn, instance, args, done) {
+  var result;
+  var called = false;
+
+  function once(error, value) {
+    if (called) {
+      return false;
+    }
+
+    called = true;
+    done(error, value);
+  }
+
+  try {
+    result = fn.apply(instance, args.concat(once));
+  }
+  catch (error) {
+    return once(error);
+  }
+
+  if (result && typeof result.then === 'function') {
+    return result.then(function (value) {
+      once(null, value);
+    }, once);
+  }
+
+  if (fn.length <= args.length) {
+    return once(null, result);
+  }
+}
+
 function canResolveExplicit(type) {
   return function (content) {
     return content.type === type;
@@ -162,20 +193,17 @@ function score(content) {
       .length;
 }
 
-function ascending(contents) {
-  contents.sort(function (a, b) {
-    return score(a) - score(b);
-  });
-
+function sort(contents, method) {
+  contents.sort(method);
   return contents;
 }
 
-function descending(contents) {
-  contents.sort(function (a, b) {
-    return score(b) - score(a);
-  });
+function ascending(a, b) {
+  return score(a) - score(b);
+}
 
-  return contents;
+function descending(a, b) {
+  return score(b) - score(a);
 }
 
 function createExplicitResolver(contents) {
@@ -195,7 +223,7 @@ function resolveExplicit(contents, content, done) {
       return done(error);
     }
 
-    content.resolve.apply(content.instance, args.concat(done));
+    invoke(content.resolve, content.instance, args, done);
   });
 }
 
@@ -291,9 +319,7 @@ function resolveImplicit(contents, type, content, done) {
     }
 
     args.unshift(new Template(template));
-    args.push(done);
-
-    content.resolve.apply(content.instance, args);
+    invoke(content.resolve, content.instance, args, done);
   });
 }
 
@@ -306,10 +332,10 @@ function createTypeResolver(contents) {
 }
 
 function resolveType(contents, type, done) {
-  var explicit = ascending(contents.filter(canResolveExplicit(type)))
+  var explicit = sort(contents.filter(canResolveExplicit(type)), ascending)
     .map(createExplicitResolver(contents));
 
-  var implicit = descending(contents.filter(canResolveImplicit(type)))
+  var implicit = sort(contents.filter(canResolveImplicit(type)), descending)
     .map(createImplicitResolver(contents, type));
 
   var tasks = explicit.concat(implicit);

@@ -21,20 +21,11 @@
  *
  */
 
-function TakenError($, value) {
-  var spaced = $.space().toLowerCase();
+var TakenError = require('./TakenError');
 
-  Error.call(this);
-  Error.captureStackTrace(this, this.constructor);
-
-  this.name = $ + 'TakenError';
-  this.message = 'The ' + spaced + ' "' + value + '" has already been taken';
-  this.code = 409;
-}
-
-module.exports = function ($, value, id, done) {
+module.exports = function ($, value, id) {
   if (id) {
-    return done(new TakenError($, value));
+    throw new TakenError($, value);
   }
 
   var record = {
@@ -42,5 +33,5 @@ module.exports = function ($, value, id, done) {
   };
 
   record[$.toCamelCase()] = value;
-  done(null, record);
+  return record;
 };

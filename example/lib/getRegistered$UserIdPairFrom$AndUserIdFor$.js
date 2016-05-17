@@ -21,26 +21,17 @@
  *
  */
 
-function NotFoundError($, value) {
-  var spaced = $.space().toLowerCase();
+var NotFoundError = require('./NotFoundError');
 
-  Error.call(this);
-  Error.captureStackTrace(this, this.constructor);
-
-  this.name = $ + 'NotFoundError';
-  this.message = 'The ' + spaced + ' "' + value + '" was not found';
-  this.code = 404;
-}
-
-module.exports = function ($, value, id, done) {
+module.exports = function ($, value, id) {
   if (id) {
     var record = {
       id: id
     };
 
     record[$.toCamelCase()] = value;
-    return done(null, record);
+    return record;
   }
 
-  done(new NotFoundError($, value));
+  throw new NotFoundError($, value);
 };

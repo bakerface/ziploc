@@ -21,6 +21,6 @@
  *
  */
 
-module.exports = function (pair, done) {
-  done(null, pair.id);
+module.exports = function (pair) {
+  return pair.id;
 };

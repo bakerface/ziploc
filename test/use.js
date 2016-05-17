@@ -272,4 +272,68 @@ describe('ziploc.use(instance)', function () {
       });
     });
   });
+
+  describe('when the instance has a synchronous route', function () {
+    beforeEach(function () {
+      instance.getFoo = function () {
+        return 'foo';
+      };
+    });
+
+    it('should resolve to the return value', function (done) {
+      ziploc.use(instance).resolve('Foo', function (error, foo) {
+        assert.strictEqual(error, null);
+        assert.strictEqual(foo, 'foo');
+        done();
+      });
+    });
+  });
+
+  describe('when the instance has an route returning a promise', function () {
+    beforeEach(function () {
+      instance.getFoo = function () {
+        return Promise.resolve('foo');
+      };
+    });
+
+    it('should await the promise', function (done) {
+      ziploc.use(instance).resolve('Foo', function (error, foo) {
+        assert.strictEqual(error, null);
+        assert.strictEqual(foo, 'foo');
+        done();
+      });
+    });
+  });
+
+  describe('when the instance has an route that throws', function () {
+    beforeEach(function () {
+      instance.getFoo = function () {
+        throw new ReferenceError('Foo');
+      };
+    });
+
+    it('should catch the error', function (done) {
+      ziploc.use(instance).resolve('Foo', function (error) {
+        assert.deepEqual(error, new ReferenceError('Foo'));
+        done();
+      });
+    });
+  });
+
+  describe('when the instance has an route that completes twice', function () {
+    beforeEach(function () {
+      instance.getFoo = function (done) {
+        done(null, 'foo');
+        done(null, 'bar');
+      };
+    });
+
+    it('should only return the first result', function (done) {
+      ziploc.use(instance).resolve('Foo', function (error, foo) {
+        assert.strictEqual(error, null);
+        assert.strictEqual(foo, 'foo');
+        done();
+      });
+    });
+  });
 });

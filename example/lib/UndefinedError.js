@@ -21,9 +21,11 @@
  *
  */
 
-var redis = require('fakeredis');
-var client = redis.createClient();
+module.exports = function ($) {
+  Error.call(this);
+  Error.captureStackTrace(this, this.constructor);
 
-module.exports = function () {
-  return client;
+  this.name = $ + 'UndefinedError';
+  this.message = 'Expected ' + $.space().toLowerCase() + ' to be defined';
+  this.code = 400;
 };

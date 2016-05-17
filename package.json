@@ -1,6 +1,6 @@
 {
   "name": "ziploc",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "An extensible nano-service framework",
   "main": "index.js",
   "author": "Christopher M. Baker",
@@ -34,6 +34,10 @@
       "afterEach"
     ],
     "rules": {
+      "brace-style": [
+        "error",
+        "stroustrup"
+      ],
       "xo/filename-case": [
         "off"
       ],
