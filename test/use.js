@@ -112,6 +112,14 @@ describe('ziploc.use(instance)', function () {
         done(null, $.toCamelCase());
       };
 
+      instance.getSnakeCase$ = function ($, done) {
+        done(null, $.toSnakeCase());
+      };
+
+      instance.getKebabCase$ = function ($, done) {
+        done(null, $.toKebabCase());
+      };
+
       instance.getSpaced$ = function ($, done) {
         done(null, $.space());
       };
@@ -153,6 +161,22 @@ describe('ziploc.use(instance)', function () {
       ziploc.use(instance).resolve('CamelCaseFooBar', function (error, foobar) {
         assert.strictEqual(error, null);
         assert.strictEqual(foobar, 'fooBar');
+        done();
+      });
+    });
+
+    it('should be able to snakecase', function (done) {
+      ziploc.use(instance).resolve('SnakeCaseFooBar', function (error, foobar) {
+        assert.strictEqual(error, null);
+        assert.strictEqual(foobar, 'Foo_Bar');
+        done();
+      });
+    });
+
+    it('should be able to kebabcase', function (done) {
+      ziploc.use(instance).resolve('KebabCaseFooBar', function (error, foobar) {
+        assert.strictEqual(error, null);
+        assert.strictEqual(foobar, 'Foo-Bar');
         done();
       });
     });

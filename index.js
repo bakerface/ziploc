@@ -306,6 +306,14 @@ Template.prototype.space = function () {
   return this.join(' ');
 };
 
+Template.prototype.toSnakeCase = function () {
+  return this.join('_');
+};
+
+Template.prototype.toKebabCase = function () {
+  return this.join('-');
+};
+
 function resolveImplicit(contents, type, content, done) {
   var template = getMatchForTemplate(type, content.type)[1];
 
