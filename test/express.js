@@ -26,15 +26,19 @@ var express = require('express');
 var request = require('supertest');
 
 var instance = {
-  getUsernameFromRequest: function (request, done) {
-    done(null, request.params.username);
+  getUsernameFromRequest: function (request) {
+    return request.params.username;
   },
 
-  getUserFromUsername: function (username, done) {
-    done(null, {
+  getUserFromUsername: function (username) {
+    return {
       username: username,
       email: username + '@example.com'
-    });
+    };
+  },
+
+  getUserLocationFromUsername: function (username) {
+    return '/users/' + username;
   }
 };
 
@@ -49,9 +53,18 @@ describe('ziploc.express(type)', function () {
 
     app.get('/error', ziploc.use(instance)
       .express().status(200).json('Error'));
+
+    app.post('/users/:username', ziploc.use(instance)
+      .express().status(200).location('UserLocation').json('User'));
+
+    app.post('/users/:username/json_error', ziploc.use(instance)
+      .express().status(200).location('UserLocation').json('Error'));
+
+    app.post('/users/:username/location_error', ziploc.use(instance)
+      .express().status(200).location('Error').json('User'));
   });
 
-  it('should resolve type', function (done) {
+  it('should resolve the JSON type', function (done) {
     request(app)
       .get('/users/john')
       .expect(200, {
@@ -60,9 +73,31 @@ describe('ziploc.express(type)', function () {
       }, done);
   });
 
-  it('should forward errors', function (done) {
+  it('should forward JSON errors', function (done) {
     request(app)
       .get('/error')
+      .expect(500, done);
+  });
+
+  it('should resolve the location type', function (done) {
+    request(app)
+      .post('/users/john')
+      .expect('Location', '/users/john')
+      .expect(200, {
+        username: 'john',
+        email: 'john@example.com'
+      }, done);
+  });
+
+  it('should forward JSON errors', function (done) {
+    request(app)
+      .post('/users/john/json_error')
+      .expect(500, done);
+  });
+
+  it('should forward location errors', function (done) {
+    request(app)
+      .post('/users/john/location_error')
       .expect(500, done);
   });
 });

@@ -378,6 +378,10 @@ function ExpressStatus(ziploc, request, code) {
   this.code = code;
 }
 
+ExpressStatus.prototype.location = function (where) {
+  return new ExpressStatusLocation(this.ziploc, this.request, this.code, where);
+};
+
 ExpressStatus.prototype.json = function (response) {
   var ziploc = this.ziploc;
   var request = this.request;
@@ -392,5 +396,39 @@ ExpressStatus.prototype.json = function (response) {
 
         res.status(code).json(value);
       });
+  };
+};
+
+function ExpressStatusLocation(ziploc, request, code, where) {
+  this.ziploc = ziploc;
+  this.request = request;
+  this.code = code;
+  this.where = where;
+}
+
+ExpressStatusLocation.prototype.json = function (response) {
+  var ziploc = this.ziploc;
+  var request = this.request;
+  var code = this.code;
+  var where = this.where;
+
+  return function (req, res, next) {
+    var requestZiploc = ziploc.given(request, req);
+
+    requestZiploc.resolve(response, function (error, value) {
+      if (error) {
+        return next(error);
+      }
+
+      var responseZiploc = requestZiploc.given(response, value);
+
+      responseZiploc.resolve(where, function (error, location) {
+        if (error) {
+          return next(error);
+        }
+
+        res.status(code).location(location).json(value);
+      });
+    });
   };
 };
