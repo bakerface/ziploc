@@ -87,8 +87,8 @@ Ziploc.prototype.given = function (type, value) {
   return this.add({
     type: type,
     dependencies: [],
-    resolve: function (done) {
-      done(null, value);
+    resolve: function () {
+      return value;
     }
   });
 };
@@ -152,30 +152,33 @@ function invoke(fn, instance, args, done) {
   var result;
   var called = false;
 
-  function once(error, value) {
+  function callback(error, value) {
     if (called) {
       return false;
     }
 
     called = true;
-    done(error, value);
+
+    setTimeout(function () {
+      done(error, value);
+    }, 0);
   }
 
   try {
-    result = fn.apply(instance, args.concat(once));
+    result = fn.apply(instance, args.concat(callback));
   }
   catch (error) {
-    return once(error);
+    return callback(error);
   }
 
   if (result && typeof result.then === 'function') {
     return result.then(function (value) {
-      once(null, value);
-    }, once);
+      callback(null, value);
+    }, callback);
   }
 
   if (fn.length <= args.length) {
-    return once(null, result);
+    return callback(null, result);
   }
 }
 
@@ -193,6 +196,17 @@ function score(content) {
       .length;
 }
 
+function save(cache, type, done) {
+  return function (error, value) {
+    if (error) {
+      return done(error, value);
+    }
+
+    cache[type] = value;
+    return done(error, value);
+  };
+}
+
 function sort(contents, method) {
   contents.sort(method);
   return contents;
@@ -206,24 +220,25 @@ function descending(a, b) {
   return score(b) - score(a);
 }
 
-function createExplicitResolver(contents) {
+function createExplicitResolver(cache, contents) {
   return function (content) {
     return function (done) {
-      resolveExplicit(contents, content, done);
+      resolveExplicit(cache, contents, content, done);
     };
   };
 }
 
-function resolveExplicit(contents, content, done) {
+function resolveExplicit(cache, contents, content, done) {
   var tasks = content.dependencies
-    .map(createTypeResolver(contents));
+    .map(createTypeResolver(cache, contents));
 
   series(tasks, function (error, args) {
     if (error) {
       return done(error);
     }
 
-    invoke(content.resolve, content.instance, args, done);
+    invoke(content.resolve, content.instance, args,
+      save(cache, content.type, done));
   });
 }
 
@@ -267,10 +282,10 @@ function canResolveImplicit(type) {
   };
 }
 
-function createImplicitResolver(contents, type) {
+function createImplicitResolver(cache, contents, type) {
   return function (content) {
     return function (done) {
-      resolveImplicit(contents, type, content, done);
+      resolveImplicit(cache, contents, type, content, done);
     };
   };
 }
@@ -314,12 +329,12 @@ Template.prototype.toKebabCase = function () {
   return this.join('-');
 };
 
-function resolveImplicit(contents, type, content, done) {
+function resolveImplicit(cache, contents, type, content, done) {
   var template = getMatchForTemplate(type, content.type)[1];
 
   var tasks = content.dependencies
     .map(rename(template))
-    .map(createTypeResolver(contents));
+    .map(createTypeResolver(cache, contents));
 
   series(tasks, function (error, args) {
     if (error) {
@@ -327,24 +342,30 @@ function resolveImplicit(contents, type, content, done) {
     }
 
     args.unshift(new Template(template));
-    invoke(content.resolve, content.instance, args, done);
+
+    invoke(content.resolve, content.instance, args,
+      save(cache, type, done));
   });
 }
 
-function createTypeResolver(contents) {
+function createTypeResolver(cache, contents) {
   return function (type) {
     return function (done) {
-      resolveType(contents, type, done);
+      resolveType(cache, contents, type, done);
     };
   };
 }
 
-function resolveType(contents, type, done) {
+function resolveType(cache, contents, type, done) {
+  if (type in cache) {
+    return done(null, cache[type]);
+  }
+
   var explicit = sort(contents.filter(canResolveExplicit(type)), ascending)
-    .map(createExplicitResolver(contents));
+    .map(createExplicitResolver(cache, contents));
 
   var implicit = sort(contents.filter(canResolveImplicit(type)), descending)
-    .map(createImplicitResolver(contents, type));
+    .map(createImplicitResolver(cache, contents, type));
 
   var tasks = explicit.concat(implicit);
 
@@ -356,7 +377,7 @@ function resolveType(contents, type, done) {
 }
 
 Ziploc.prototype.resolve = function (type, done) {
-  resolveType(this.contents, type, done);
+  resolveType({ }, this.contents, type, done);
 };
 
 Ziploc.prototype.express = function (request) {
@@ -407,28 +428,31 @@ function ExpressStatusLocation(ziploc, request, code, where) {
 }
 
 ExpressStatusLocation.prototype.json = function (response) {
-  var ziploc = this.ziploc;
   var request = this.request;
   var code = this.code;
   var where = this.where;
+  var type = '_ZiplocExpressResponse' + where + response;
+
+  var ziploc = this.ziploc.add({
+    type: type,
+    dependencies: [where, response],
+    resolve: function (location, json) {
+      return {
+        location: location,
+        json: json
+      };
+    }
+  });
 
   return function (req, res, next) {
-    var requestZiploc = ziploc.given(request, req);
+    var zip = ziploc.given(request, req);
 
-    requestZiploc.resolve(response, function (error, value) {
+    zip.resolve(type, function (error, value) {
       if (error) {
         return next(error);
       }
 
-      var responseZiploc = requestZiploc.given(response, value);
-
-      responseZiploc.resolve(where, function (error, location) {
-        if (error) {
-          return next(error);
-        }
-
-        res.status(code).location(location).json(value);
-      });
+      res.status(code).location(value.location).json(value.json);
     });
   };
 };

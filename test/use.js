@@ -360,4 +360,33 @@ describe('ziploc.use(instance)', function () {
       });
     });
   });
+
+  describe('when a dependency is already resolved', function () {
+    beforeEach(function () {
+      instance.getFoo = function () {
+        return Math.random();
+      };
+
+      instance.getBarFromFoo = function (foo) {
+        return foo;
+      };
+
+      instance.getBazFromFoo = function (foo) {
+        return foo;
+      };
+
+      instance.getEqualFromBarAndBaz = function (bar, baz) {
+        if (bar !== baz) {
+          throw new Error('Failed to cache foo');
+        }
+      };
+    });
+
+    it('should cache the result', function (done) {
+      ziploc.use(instance).resolve('Equal', function (error) {
+        assert.strictEqual(error, null);
+        done();
+      });
+    });
+  });
 });
