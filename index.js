@@ -376,7 +376,58 @@ function resolveType(cache, contents, type, done) {
   first(tasks, done);
 }
 
+function random(base, length) {
+  var s = '';
+
+  while (s.length < length) {
+    s += Math.random().toString(base).slice(2);
+  }
+
+  return s.slice(0, length);
+}
+
+function uuid() {
+  return 'ziploc:' + random(36, 25);
+}
+
+function getDependenciesForObject(object) {
+  return Object.getOwnPropertyNames(object)
+    .map(function (name) {
+      return object[name];
+    });
+}
+
+function assignResolvedProperty(object, dependencies, resolved) {
+  return function (target, property) {
+    var type = object[property];
+    var index = dependencies.indexOf(type);
+    var value = resolved[index];
+
+    target[property] = value;
+    return target;
+  };
+}
+
+function resolveObjectFromDependencies(object, dependencies) {
+  return function () {
+    return Object.getOwnPropertyNames(object).reduce(
+      assignResolvedProperty(object, dependencies, arguments), { });
+  };
+}
+
 Ziploc.prototype.resolve = function (type, done) {
+  if (typeof type === 'object') {
+    var dependencies = getDependenciesForObject(type);
+
+    var content = {
+      type: uuid(),
+      dependencies: dependencies,
+      resolve: resolveObjectFromDependencies(type, dependencies)
+    };
+
+    return this.add(content).resolve(content.type, done);
+  }
+
   resolveType({ }, this.contents, type, done);
 };
 
@@ -428,31 +479,24 @@ function ExpressStatusLocation(ziploc, request, code, where) {
 }
 
 ExpressStatusLocation.prototype.json = function (response) {
+  var ziploc = this.ziploc;
   var request = this.request;
   var code = this.code;
-  var where = this.where;
-  var type = '_ZiplocExpressResponse' + where + response;
 
-  var ziploc = this.ziploc.add({
-    type: type,
-    dependencies: [where, response],
-    resolve: function (location, json) {
-      return {
-        location: location,
-        json: json
-      };
-    }
-  });
+  var type = {
+    location: this.where,
+    json: response
+  };
 
   return function (req, res, next) {
-    var zip = ziploc.given(request, req);
+    ziploc
+      .given(request, req)
+      .resolve(type, function (error, value) {
+        if (error) {
+          return next(error);
+        }
 
-    zip.resolve(type, function (error, value) {
-      if (error) {
-        return next(error);
-      }
-
-      res.status(code).location(value.location).json(value.json);
-    });
+        res.status(code).location(value.location).json(value.json);
+      });
   };
 };

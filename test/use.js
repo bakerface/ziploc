@@ -389,4 +389,40 @@ describe('ziploc.use(instance)', function () {
       });
     });
   });
+
+  describe('when an object is to be resolved', function () {
+    beforeEach(function () {
+      instance.getFoo = function () {
+        return 'FOO';
+      };
+
+      instance.getBar = function () {
+        return 'BAR';
+      };
+
+      instance.getBaz = function () {
+        return 'BAZ';
+      };
+    });
+
+    it('should resolve the property values', function (done) {
+      var type = {
+        foo: 'Foo',
+        bar: 'Bar',
+        baz: 'Baz'
+      };
+
+      ziploc.use(instance).resolve(type, function (error, value) {
+        assert.strictEqual(error, null);
+
+        assert.deepEqual(value, {
+          foo: 'FOO',
+          bar: 'BAR',
+          baz: 'BAZ'
+        });
+
+        done();
+      });
+    });
+  });
 });
