@@ -13,40 +13,28 @@ independent services into a complete system. Let's take an example:
 
 ``` javascript
 var ziploc = require('ziploc');
+var redis = require('redis');
+var client = redis.createClient();
 
-var instance = {
-  getUserIdFromUsername: function (username) {
-    return username + '1234';
+var UserController = {
+  getUserIdFromUsername: function (username, done) {
+    client.hget('usernames', username, done);
   },
 
-  getEmailAddressFromUserId: function (id, done) {
-    done(null, id + '@example.com');
+  getUserFromUserId: function (id, done) {
+    client.hgetall('user:' + id, done);
   },
 
-  getEmailFromEmailAddressAndUsername: function (address, username) {
-    var email = {
-      to: address,
-      subject: 'Hello ' + username,
-      text: 'Glad to meet you!'
-    };
-
-    return sendEmail(email)
-      .then(function () {
-        return email;
-      });
+  getEmailAddressFromUser: function (user) {
+    return user.email;
   }
 };
 
 ziploc
-  .use(instance)
+  .use(UserController)
   .given('Username', 'john')
-  .resolve('Email', function (error, email) {
-    console.log(email); // =>
-    // {
-    //   to: "john1234@example.com",
-    //   subject: "Hello john",
-    //   text: "Glad to meet you!"
-    // }
+  .resolve('EmailAddress', function (error, email) {
+    console.log(email); // john@doe.com
   });
 ```
 
@@ -153,9 +141,9 @@ ziploc
 
 ziploc
   .use(instance)
-  .given('NullableUsername', null)
-  .resolve('Username', function (error, username) {
-    console.error(error); // ReferenceError: Username
+  .given('NullableEmailAddress', null)
+  .resolve('EmailAddress', function (error, email) {
+    console.error(error); // ReferenceError: EmailAddress
   });
 ```
 
