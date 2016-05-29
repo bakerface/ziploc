@@ -21,10 +21,10 @@
  *
  */
 
-var random = require('./random');
+var uuid = require('uuid');
 
 module.exports = function (client, username, email, done) {
-  var id = random(36, 25);
+  var id = uuid.v4();
 
   var user = {
     id: id,

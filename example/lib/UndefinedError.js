@@ -21,9 +21,10 @@
  *
  */
 
+var Error = require('./Error');
+
 module.exports = function ($) {
   Error.call(this);
-  Error.captureStackTrace(this, this.constructor);
 
   this.name = $ + 'UndefinedError';
   this.message = 'Expected ' + $.space().toLowerCase() + ' to be defined';

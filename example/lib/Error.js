@@ -21,12 +21,7 @@
  *
  */
 
-module.exports = function (base, len) {
-  var s = '';
-
-  while (s.length < len) {
-    s += Math.random().toString(base).slice(2);
-  }
-
-  return s.slice(0, len);
+module.exports = function () {
+  Error.call(this);
+  Error.captureStackTrace(this, this.constructor);
 };

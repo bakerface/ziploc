@@ -21,12 +21,12 @@
  *
  */
 
+var Error = require('./Error');
+
 module.exports = function ($, value) {
-  var spaced = $.space().toLowerCase();
-
   Error.call(this);
-  Error.captureStackTrace(this, this.constructor);
 
+  var spaced = $.space().toLowerCase();
   this.name = $ + 'TakenError';
   this.message = 'The ' + spaced + ' "' + value + '" has already been taken';
   this.code = 409;

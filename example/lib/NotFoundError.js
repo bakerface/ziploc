@@ -21,11 +21,12 @@
  *
  */
 
-module.exports = function ($, value) {
-  var spaced = $.space().toLowerCase();
+var Error = require('./Error');
 
+module.exports = function ($, value) {
   Error.call(this);
-  Error.captureStackTrace(this, this.constructor);
+
+  var spaced = $.space().toLowerCase();
 
   this.name = $ + 'NotFoundError';
   this.message = 'The ' + spaced + ' "' + value + '" was not found';
