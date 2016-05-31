@@ -62,6 +62,10 @@ describe('ziploc.express(type)', function () {
 
     app.post('/users/:username/location_error', ziploc.use(instance)
       .express().status(200).location('Error').json('User'));
+
+    app.use(function (err, req, res, _next) {
+      res.status(500).json(err);
+    });
   });
 
   it('should resolve the JSON type', function (done) {
