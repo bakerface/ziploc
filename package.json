@@ -1,6 +1,6 @@
 {
   "name": "ziploc",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "An extensible nano-service framework",
   "main": "index.js",
   "author": "Christopher M. Baker",

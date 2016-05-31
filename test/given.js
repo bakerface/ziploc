@@ -32,4 +32,19 @@ describe('ziploc.given(type, value)', function () {
       done();
     });
   });
+
+  it('should have higher priority than resolve functions', function (done) {
+    ziploc
+      .use({
+        getFoo: function () {
+          return 'FOO';
+        }
+      })
+      .given('Foo', 'foo')
+      .resolve('Foo', function (error, foo) {
+        assert.strictEqual(error, null);
+        assert.strictEqual(foo, 'foo');
+        done();
+      });
+  });
 });

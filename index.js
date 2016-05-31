@@ -21,12 +21,13 @@
  *
  */
 
-var Ziploc = module.exports = function (contents) {
+var Ziploc = module.exports = function (contents, givens) {
   this.contents = contents || [];
+  this.givens = givens || [];
 };
 
 Ziploc.prototype.add = function (content) {
-  return new Ziploc(this.contents.concat(content));
+  return new Ziploc(this.contents.concat(content), this.givens);
 };
 
 function isUsable(instance) {
@@ -84,13 +85,10 @@ Ziploc.use = function () {
 };
 
 Ziploc.prototype.given = function (type, value) {
-  return this.add({
+  return new Ziploc(this.contents.slice(), this.givens.concat({
     type: type,
-    dependencies: [],
-    resolve: function () {
-      return value;
-    }
-  });
+    value: value
+  }));
 };
 
 Ziploc.given = function (type, value) {
@@ -188,14 +186,6 @@ function canResolveExplicit(type) {
   };
 }
 
-function score(content) {
-  return Math.pow(10, content.dependencies.length) +
-    content.dependencies
-      .concat(content.type)
-      .join('')
-      .length;
-}
-
 function save(cache, type, done) {
   return function (error, value) {
     if (error) {
@@ -205,19 +195,6 @@ function save(cache, type, done) {
     cache[type] = value;
     return done(error, value);
   };
-}
-
-function sort(contents, method) {
-  contents.sort(method);
-  return contents;
-}
-
-function ascending(a, b) {
-  return score(a) - score(b);
-}
-
-function descending(a, b) {
-  return score(b) - score(a);
 }
 
 function createExplicitResolver(cache, contents) {
@@ -361,10 +338,10 @@ function resolveType(cache, contents, type, done) {
     return done(null, cache[type]);
   }
 
-  var explicit = sort(contents.filter(canResolveExplicit(type)), ascending)
+  var explicit = contents.filter(canResolveExplicit(type))
     .map(createExplicitResolver(cache, contents));
 
-  var implicit = sort(contents.filter(canResolveImplicit(type)), descending)
+  var implicit = contents.filter(canResolveImplicit(type))
     .map(createImplicitResolver(cache, contents, type));
 
   var tasks = explicit.concat(implicit);
@@ -415,6 +392,15 @@ function resolveObjectFromDependencies(object, dependencies) {
   };
 }
 
+function reduceCreateCache(cache, given) {
+  cache[given.type] = given.value;
+  return cache;
+}
+
+function createCache(givens) {
+  return givens.reduce(reduceCreateCache, { });
+}
+
 Ziploc.prototype.resolve = function (type, done) {
   if (typeof type === 'object') {
     var dependencies = getDependenciesForObject(type);
@@ -428,7 +414,7 @@ Ziploc.prototype.resolve = function (type, done) {
     return this.add(content).resolve(content.type, done);
   }
 
-  resolveType({ }, this.contents, type, done);
+  resolveType(createCache(this.givens), this.contents, type, done);
 };
 
 Ziploc.prototype.express = function (request) {
